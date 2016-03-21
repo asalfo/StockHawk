@@ -19,6 +19,7 @@ import com.squareup.okhttp.Response;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 
 /**
  * Created by sam_chordas on 9/30/15.
@@ -32,6 +33,9 @@ public class StockTaskService extends GcmTaskService{
   private Context mContext;
   private StringBuilder mStoredSymbols = new StringBuilder();
   private boolean isUpdate;
+
+    // Defines and instantiates an object for handling status updates.
+  private BroadcastNotifier mBroadcaster = new BroadcastNotifier(this);
 
   public StockTaskService(){}
 
@@ -112,6 +116,7 @@ public class StockTaskService extends GcmTaskService{
       urlString = urlStringBuilder.toString();
       try{
         getResponse = fetchData(urlString);
+        Log.d(LOG_TAG,"Response = "+getResponse);
         result = GcmNetworkManager.RESULT_SUCCESS;
         try {
           ContentValues contentValues = new ContentValues();
@@ -121,10 +126,19 @@ public class StockTaskService extends GcmTaskService{
             mContext.getContentResolver().update(QuoteProvider.Quotes.CONTENT_URI, contentValues,
                 null, null);
           }
-          mContext.getContentResolver().applyBatch(QuoteProvider.AUTHORITY,
-              Utils.quoteJsonToContentVals(getResponse));
-        }catch (RemoteException | OperationApplicationException e){
-          Log.e(LOG_TAG, "Error applying batch insert", e);
+            try {
+                ArrayList batchOperations =Utils.quoteJsonToContentVals(getResponse);
+                mContext.getContentResolver().applyBatch(QuoteProvider.AUTHORITY,batchOperations);
+            }catch (NumberFormatException e ){
+                mBroadcaster.broadcastIntentState(Constants.STATE_ERROR);
+                e.printStackTrace();
+                return result;
+            }
+
+            mBroadcaster.broadcastIntentState(Constants.STATE_ACTION_COMPLETE);
+
+        }catch (RemoteException | OperationApplicationException e) {
+            Log.e(LOG_TAG, "Error applying batch insert", e);
         }
       } catch (IOException e){
         e.printStackTrace();
