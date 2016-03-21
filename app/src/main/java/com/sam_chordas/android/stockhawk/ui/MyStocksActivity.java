@@ -1,13 +1,19 @@
 package com.sam_chordas.android.stockhawk.ui;
 
 import android.app.LoaderManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.Loader;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.Snackbar;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.ActionBar;
 import android.os.Bundle;
@@ -15,7 +21,6 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.text.InputType;
-import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -27,6 +32,7 @@ import com.sam_chordas.android.stockhawk.data.QuoteProvider;
 import com.sam_chordas.android.stockhawk.rest.QuoteCursorAdapter;
 import com.sam_chordas.android.stockhawk.rest.RecyclerViewItemClickListener;
 import com.sam_chordas.android.stockhawk.rest.Utils;
+import com.sam_chordas.android.stockhawk.service.Constants;
 import com.sam_chordas.android.stockhawk.service.StockIntentService;
 import com.sam_chordas.android.stockhawk.service.StockTaskService;
 import com.google.android.gms.gcm.GcmNetworkManager;
@@ -41,6 +47,8 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
    * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
    */
 
+
+  private CoordinatorLayout mCoordinatorLayout;
   /**
    * Used to store the last screen title. For use in {@link #restoreActionBar()}.
    */
@@ -52,6 +60,7 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
   private Context mContext;
   private Cursor mCursor;
   boolean isConnected;
+  private StockServiceStateReceiver mStockServiceStateReceiver;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -76,6 +85,27 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
         networkToast();
       }
     }
+
+    /*
+         * Creates an intent filter for DownloadStateReceiver that intercepts broadcast Intents
+         */
+
+      // The filter's action is BROADCAST_ACTION
+      IntentFilter statusIntentFilter = new IntentFilter(
+              Constants.BROADCAST_ACTION);
+
+      // Sets the filter's category to DEFAULT
+      statusIntentFilter.addCategory(Intent.CATEGORY_DEFAULT);
+
+      // Instantiates a new DownloadStateReceiver
+      mStockServiceStateReceiver = new StockServiceStateReceiver();
+
+      // Registers the DownloadStateReceiver and its intent filters
+      LocalBroadcastManager.getInstance(this).registerReceiver(
+              mStockServiceStateReceiver,
+              statusIntentFilter);
+    mCoordinatorLayout = (CoordinatorLayout) findViewById(R.id
+            .coordinatorLayout);
     RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
     recyclerView.setLayoutManager(new LinearLayoutManager(this));
     getLoaderManager().initLoader(CURSOR_LOADER_ID, null, this);
@@ -107,11 +137,13 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
                       new String[] { QuoteColumns.SYMBOL }, QuoteColumns.SYMBOL + "= ?",
                       new String[] { input.toString() }, null);
                   if (c.getCount() != 0) {
-                    Toast toast =
-                        Toast.makeText(MyStocksActivity.this, "This stock is already saved!",
-                            Toast.LENGTH_LONG);
-                    toast.setGravity(Gravity.CENTER, Gravity.CENTER, 0);
-                    toast.show();
+
+                    buildSnackbar(mCoordinatorLayout, "This stock is already saved!", Constants.STATE_ERROR);
+//                    Toast toast =
+//                        Toast.makeText(MyStocksActivity.this, "This stock is already saved!",
+//                            Toast.LENGTH_LONG);
+//                    toast.setGravity(Gravity.CENTER, Gravity.CENTER, 0);
+//                    toast.show();
                     return;
                   } else {
                     // Add the stock to DB
@@ -153,6 +185,22 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
       // are updated.
       GcmNetworkManager.getInstance(this).schedule(periodicTask);
     }
+  }
+
+  private void buildSnackbar(View view, String message,int status) {
+    Snackbar snackbar = Snackbar
+            .make(view, message, Snackbar.LENGTH_LONG);
+      View snackbarView = snackbar.getView();
+      switch (status){
+          case Constants.STATE_ERROR:
+              snackbarView.setBackgroundColor(Color.RED);
+              break;
+          case Constants.STATE_ACTION_COMPLETE:
+              snackbarView.setBackgroundColor(Color.GREEN);
+              break;
+      }
+
+    snackbar.show();
   }
 
 
@@ -223,4 +271,51 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
     mCursorAdapter.swapCursor(null);
   }
 
+    /**
+     * This class uses the BroadcastReceiver framework to detect and handle status messages from
+     * the service that downloads URLs.
+     */
+    private class StockServiceStateReceiver extends BroadcastReceiver {
+
+        private StockServiceStateReceiver() {
+
+        }
+        /**
+         *
+         * This method is called by the system when a broadcast Intent is matched by this class'
+         * intent filters
+         *
+         * @param context An Android context
+         * @param intent The incoming broadcast Intent
+         */
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            /*
+             * Gets the status from the Intent's extended data, and chooses the appropriate action
+             */
+            switch (intent.getIntExtra(Constants.EXTENDED_DATA_STATUS,
+                    Constants.STATE_ACTION_COMPLETE)) {
+
+                // Logs "started" state
+                case Constants.STATE_ERROR:
+                     buildSnackbar(mCoordinatorLayout, "Stock symbol not found",Constants.STATE_ERROR);
+                    break;
+                case Constants.STATE_ACTION_COMPLETE:
+                    buildSnackbar(mCoordinatorLayout,"Stock added successfully",Constants.STATE_ACTION_COMPLETE);
+                default:
+                    break;
+            }
+        }
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        if (mStockServiceStateReceiver != null) {
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(mStockServiceStateReceiver);
+            mStockServiceStateReceiver = null;
+        }
+        super.onDestroy();
+    }
 }
