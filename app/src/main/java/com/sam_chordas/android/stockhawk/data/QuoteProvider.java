@@ -36,7 +36,7 @@ public class QuoteProvider {
     public static final Uri CONTENT_URI = buildUri(Path.QUOTES);
 
     @InexactContentUri(
-        name = "QUOTE_ID",
+        name = "QUOTE_SYMBOL",
         path = Path.QUOTES + "/*",
         type = "vnd.android.cursor.item/quote",
         whereColumn = QuoteColumns.SYMBOL,
@@ -44,6 +44,17 @@ public class QuoteProvider {
     )
     public static Uri withSymbol(String symbol){
       return buildUri(Path.QUOTES, symbol);
+    }
+
+    @InexactContentUri(
+          name = "QUOTE_ID",
+          path = Path.QUOTES + "/#",
+          type = "vnd.android.cursor.item/quote",
+          whereColumn = QuoteColumns._ID,
+          pathSegment = 1
+    )
+    public static Uri withId(long id){
+      return buildUri(Path.QUOTES, Long.toString(id));
     }
   }
 }

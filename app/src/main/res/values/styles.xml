@@ -21,4 +21,25 @@
     <item name="android:textAllCaps">true</item>
   </style>
 
+  <style name="wrap">
+    <item name="android:layout_width">wrap_content</item>
+    <item name="android:layout_height">wrap_content</item>
+  </style>
+
+
+  <style name="BaseTextStyle" parent="@style/wrap" />
+
+  <style name="TextStyleSmall" parent="BaseTextStyle">
+    <item name="android:textSize">@dimen/text_smaller</item>
+  </style>
+  <style name="TextStyleMedium" parent="@style/wrap">
+    <item name="android:textSize">@dimen/text_small</item>
+  </style>
+
+  <style name="TextStyleLarge" parent="@style/wrap">
+    <item name="android:textSize">@dimen/text_large</item>
+  </style>
+
+
+
 </resources>

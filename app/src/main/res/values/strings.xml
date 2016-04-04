@@ -1,5 +1,6 @@
 <resources>
   <string name="app_name">Stock Hawk</string>
+  <string name="detail">Stock Hawk</string>
 
   <string name="action_example">Example action</string>
 
@@ -11,4 +12,14 @@
   <string name="input_prefill"></string>
   <string name="widget_title">Today\'s Market</string>
   <string name="network_toast">Uh-oh! This app requires an internet connection</string>
+
+  <string name="days_low">LOW: &lt;b>%1$s&lt;/b></string>
+  <string name="days_high">HIGH: &lt;b>%1$s&lt;/b></string>
+  <string name="year_low">Y-LOW: &lt;b>%1$s&lt;/b></string>
+  <string name="year_high">Y-HIGH: &lt;b>%1$s&lt;/b></string>
+  <string name="open">OPEN: &lt;b>%1$s&lt;/b></string>
+  <string name="last">LAST: &lt;b>%1$s&lt;/b></string>
+  <string name="volume">VOL: &lt;b>%1$s&lt;/b></string>
+  <string name="percent_change">CH: &lt;b>%1$s&lt;/b></string>
+
 </resources>
