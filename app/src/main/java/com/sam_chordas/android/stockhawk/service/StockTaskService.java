@@ -18,6 +18,7 @@ import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 
@@ -35,14 +36,16 @@ public class StockTaskService extends GcmTaskService{
   private boolean isUpdate;
 
     // Defines and instantiates an object for handling status updates.
-  private BroadcastNotifier mBroadcaster = new BroadcastNotifier(this);
+  private BroadcastNotifier mBroadcaster;
 
   public StockTaskService(){}
 
   public StockTaskService(Context context){
     mContext = context;
+    mBroadcaster = new BroadcastNotifier(mContext);
   }
   String fetchData(String url) throws IOException{
+    Log.d(LOG_TAG, URLDecoder.decode(url));
     Request request = new Request.Builder()
         .url(url)
         .build();
@@ -134,8 +137,6 @@ public class StockTaskService extends GcmTaskService{
                 e.printStackTrace();
                 return result;
             }
-
-            mBroadcaster.broadcastIntentState(Constants.STATE_ACTION_COMPLETE);
 
         }catch (RemoteException | OperationApplicationException e) {
             Log.e(LOG_TAG, "Error applying batch insert", e);

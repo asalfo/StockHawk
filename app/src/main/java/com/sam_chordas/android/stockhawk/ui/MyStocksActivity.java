@@ -11,8 +11,10 @@ import android.database.Cursor;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.ActionBar;
@@ -61,6 +63,7 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
   private Cursor mCursor;
   boolean isConnected;
   private StockServiceStateReceiver mStockServiceStateReceiver;
+  private IntentFilter statusIntentFilter;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -72,6 +75,19 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
     NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
     isConnected = activeNetwork != null &&
         activeNetwork.isConnectedOrConnecting();
+
+
+      // Defines selection criteria for the rows you want to delete
+      String mSelectionClause = QuoteColumns.CREATED + " > ?";
+      String[] mSelectionArgs={Utils.openDay()+" 23:59:59"};
+
+
+      getContentResolver().delete(
+              QuoteProvider.Quotes.CONTENT_URI,
+              mSelectionClause,
+              mSelectionArgs
+      );
+
     setContentView(R.layout.activity_my_stocks);
     // The intent service is for executing immediate pulls from the Yahoo API
     // GCMTaskService can only schedule tasks, they cannot execute immediately
@@ -86,24 +102,17 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
       }
     }
 
-    /*
-         * Creates an intent filter for DownloadStateReceiver that intercepts broadcast Intents
-         */
-
-      // The filter's action is BROADCAST_ACTION
-      IntentFilter statusIntentFilter = new IntentFilter(
+      statusIntentFilter = new IntentFilter(
               Constants.BROADCAST_ACTION);
 
       // Sets the filter's category to DEFAULT
       statusIntentFilter.addCategory(Intent.CATEGORY_DEFAULT);
 
-      // Instantiates a new DownloadStateReceiver
-      mStockServiceStateReceiver = new StockServiceStateReceiver();
+      if (mStockServiceStateReceiver == null) {
+          mStockServiceStateReceiver = new StockServiceStateReceiver();
+      }
 
-      // Registers the DownloadStateReceiver and its intent filters
-      LocalBroadcastManager.getInstance(this).registerReceiver(
-              mStockServiceStateReceiver,
-              statusIntentFilter);
+
     mCoordinatorLayout = (CoordinatorLayout) findViewById(R.id
             .coordinatorLayout);
     RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
@@ -114,8 +123,8 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
     recyclerView.addOnItemTouchListener(new RecyclerViewItemClickListener(this,
             new RecyclerViewItemClickListener.OnItemClickListener() {
               @Override public void onItemClick(View v, int position) {
-                //TODO:
-                // do something on item click
+                  long itemId = mCursorAdapter.getItemId(position);
+                  onItemSelected(itemId);
               }
             }));
     recyclerView.setAdapter(mCursorAdapter);
@@ -139,11 +148,6 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
                   if (c.getCount() != 0) {
 
                     buildSnackbar(mCoordinatorLayout, "This stock is already saved!", Constants.STATE_ERROR);
-//                    Toast toast =
-//                        Toast.makeText(MyStocksActivity.this, "This stock is already saved!",
-//                            Toast.LENGTH_LONG);
-//                    toast.setGravity(Gravity.CENTER, Gravity.CENTER, 0);
-//                    toast.show();
                     return;
                   } else {
                     // Add the stock to DB
@@ -187,7 +191,14 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
     }
   }
 
-  private void buildSnackbar(View view, String message,int status) {
+    private void onItemSelected(long itemId) {
+        Uri contentUri = QuoteProvider.Quotes.withId(itemId);
+        Intent intent = new Intent(mContext, DetailActivity.class)
+                            .setData(contentUri);
+        ActivityCompat.startActivity(this, intent, null);
+    }
+
+    private void buildSnackbar(View view, String message,int status) {
     Snackbar snackbar = Snackbar
             .make(view, message, Snackbar.LENGTH_LONG);
       View snackbarView = snackbar.getView();
@@ -208,6 +219,12 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
   public void onResume() {
     super.onResume();
     getLoaderManager().restartLoader(CURSOR_LOADER_ID, null, this);
+
+      // Registers the StockServiceStateReceiver and its intent filters
+      LocalBroadcastManager.getInstance(this).registerReceiver(
+              mStockServiceStateReceiver,
+              statusIntentFilter);
+
   }
 
   public void networkToast(){
@@ -309,6 +326,16 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
         }
     }
 
+
+    @Override
+    protected void onPause() {
+
+        if (mStockServiceStateReceiver != null) {
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(mStockServiceStateReceiver);
+            mStockServiceStateReceiver = null;
+        }
+        super.onPause();
+    }
 
     @Override
     protected void onDestroy() {

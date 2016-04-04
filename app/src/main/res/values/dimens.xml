@@ -9,4 +9,8 @@
 
   <dimen name="widget_default_height">110dp</dimen>
   <dimen name="widget_default_width">110dp</dimen>
+  <dimen name="text_smaller">10.0sp</dimen>
+  <dimen name="text_small">14.0sp</dimen>
+  <dimen name="text_small_medium">16.0sp</dimen>
+  <dimen name="text_large">50.0sp</dimen>
 </resources>
