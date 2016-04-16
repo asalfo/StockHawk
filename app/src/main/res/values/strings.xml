@@ -21,5 +21,10 @@
   <string name="last">LAST: &lt;b>%1$s&lt;/b></string>
   <string name="volume">VOL: &lt;b>%1$s&lt;/b></string>
   <string name="percent_change">CH: &lt;b>%1$s&lt;/b></string>
+  <string name="one_day">1D</string>
+  <string name="five_days">5D</string>
+  <string name="three_months">3M</string>
+  <string name="six_months">6M</string>
+  <string name="year">1Y</string>
 
 </resources>
