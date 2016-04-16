@@ -8,7 +8,7 @@ import java.text.DecimalFormat;
 
 public class MyYAxisValueFormatter implements YAxisValueFormatter {
 
-    private DecimalFormat mFormat;
+    private final DecimalFormat mFormat;
 
     public MyYAxisValueFormatter() {
         mFormat = new DecimalFormat("###,###,###,##0.00");

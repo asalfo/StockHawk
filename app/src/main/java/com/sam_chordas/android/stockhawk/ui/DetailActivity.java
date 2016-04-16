@@ -20,7 +20,6 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.LineData;
@@ -39,7 +38,7 @@ import java.text.ParseException;
  * Created by asalfo on 24/03/16.
  */
 public class DetailActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
-    private String LOG_TAG = DetailActivity.class.getSimpleName();
+    private final String LOG_TAG = DetailActivity.class.getSimpleName();
     public static final String SYMBOL_KEY = "symbol";
     private static final int CURSOR_LOADER_ID = 0;
     private ProgressBar mLoading;
@@ -60,8 +59,6 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
     private TextView mYearLow;
     private TextView mYearHigh;
     private Uri mUri;
-
-    private Float low, high;
 
     private StockLineChartTask chartTask;
 
@@ -188,7 +185,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         Log.d(LOG_TAG, "" + data.getCount());
-        if (data != null && data.moveToFirst()) {
+        if (data.moveToFirst()) {
             mSymbol = data.getString(data.getColumnIndex("symbol"));
             int color;
             try {
@@ -205,8 +202,8 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
             mVolume.setText(Utils.formatText(this, R.string.volume, data.getString(data.getColumnIndex("volume"))));
             mOpen.setText(Utils.formatText(this, R.string.open, data.getString(data.getColumnIndex("open"))));
             mPreviousClose.setText(Utils.formatText(this, R.string.last, data.getString(data.getColumnIndex("previous_close"))));
-            low = data.getFloat(data.getColumnIndex("days_low"));
-            high = data.getFloat(data.getColumnIndex("days_high"));
+            Float low = data.getFloat(data.getColumnIndex("days_low"));
+            Float high = data.getFloat(data.getColumnIndex("days_high"));
             mDaysLow.setText(Utils.formatText(this, R.string.days_low, String.valueOf(low)));
             mDaysHigh.setText(Utils.formatText(this, R.string.days_high, String.valueOf(high)));
             mYearLow.setText(Utils.formatText(this, R.string.year_low, data.getString(data.getColumnIndex("year_low"))));
@@ -220,10 +217,12 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
             mChange.setTextColor(color);
             mCurrPercentChange.setTextColor(color);
             ActionBar actionBar = getSupportActionBar();
-            actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
-            actionBar.setDisplayShowTitleEnabled(true);
-            actionBar.setTitle(data.getString(data.getColumnIndex("symbol")));
-            actionBar.setSubtitle(data.getString(data.getColumnIndex("name")));
+
+            if (actionBar != null) {
+                actionBar.setDisplayShowTitleEnabled(true);
+                actionBar.setTitle(data.getString(data.getColumnIndex("symbol")));
+                actionBar.setSubtitle(data.getString(data.getColumnIndex("name")));
+            }
 
 
         }

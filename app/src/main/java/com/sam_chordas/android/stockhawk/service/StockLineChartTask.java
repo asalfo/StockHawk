@@ -31,6 +31,7 @@ import java.lang.ref.WeakReference;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by asalfo on 31/03/16.
@@ -38,10 +39,10 @@ import java.util.ArrayList;
 public class StockLineChartTask extends AsyncTask<TaskParams, Void, LineData> {
 
 
-    private OkHttpClient client = new OkHttpClient();
-    private String LOG_TAG = StockLineChartTask.class.getSimpleName();
+    private final OkHttpClient client = new OkHttpClient();
+    private final String LOG_TAG = StockLineChartTask.class.getSimpleName();
     private Utils.Option mOption;
-    WeakReference<DetailActivity> mActivity;
+    private final WeakReference<DetailActivity> mActivity;
 
 
     public StockLineChartTask(DetailActivity activity) {
@@ -63,7 +64,7 @@ public class StockLineChartTask extends AsyncTask<TaskParams, Void, LineData> {
     @Override
     protected LineData doInBackground(TaskParams... params) {
 
-        ChartVal<ArrayList<String>, ArrayList<Entry>> chartVal;
+        ChartVal chartVal;
         LineData data = null;
         if (!isCancelled()) {
             String symbol = params[0].getSymbol();
@@ -77,7 +78,9 @@ public class StockLineChartTask extends AsyncTask<TaskParams, Void, LineData> {
 
             }
 
-            LineDataSet lineDataSet = new LineDataSet(chartVal.getyVals(), "DataSet");
+            LineDataSet lineDataSet;
+            @SuppressWarnings("unchecked") List<Entry> entry = (List<Entry>) chartVal.getyVals();
+            lineDataSet = new LineDataSet(entry, "DataSet");
             lineDataSet.setAxisDependency(YAxis.AxisDependency.LEFT);
             lineDataSet.setColor(Color.DKGRAY);
 
@@ -89,9 +92,9 @@ public class StockLineChartTask extends AsyncTask<TaskParams, Void, LineData> {
             lineDataSet.setDrawValues(false);
             lineDataSet.setHighLightColor(Color.rgb(244, 117, 117));
 
-            ArrayList<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
+            ArrayList<ILineDataSet> dataSets = new ArrayList<>();
             dataSets.add(lineDataSet);
-            data = new LineData(chartVal.getxVals(), dataSets);
+            data = new LineData((List<String>) chartVal.getxVals(), dataSets);
             data.setValueTextColor(Color.WHITE);
             data.setValueTextSize(9f);
         }
@@ -105,8 +108,8 @@ public class StockLineChartTask extends AsyncTask<TaskParams, Void, LineData> {
     private ChartVal buildChartValsFromCursor(Context context, String symbol) {
 
         ChartVal<ArrayList<String>, ArrayList<Entry>> chartVal = null;
-        ArrayList<String> xVals = new ArrayList<String>();
-        ArrayList<Entry> yVals = new ArrayList<Entry>();
+        ArrayList<String> xVals = new ArrayList<>();
+        ArrayList<Entry> yVals = new ArrayList<>();
 
         Uri uri = QuoteProvider.Quotes.withSymbol(symbol);
         Cursor cursor = context.getContentResolver().query(
@@ -116,7 +119,7 @@ public class StockLineChartTask extends AsyncTask<TaskParams, Void, LineData> {
                 new String[]{Utils.openDay() + " 00:00:00", Utils.openDay() + " 23:59:59"},
                 QuoteColumns.CREATED);
 
-        if (cursor.moveToFirst()) {
+        if (cursor != null ? cursor.moveToFirst() : false) {
 
             int xIndex = 0;
             do {
@@ -137,18 +140,18 @@ public class StockLineChartTask extends AsyncTask<TaskParams, Void, LineData> {
     }
 
 
-    public ChartVal buildChartValsJson(String JSON) {
+    private ChartVal buildChartValsJson(String JSON) {
         ChartVal<ArrayList<String>, ArrayList<Entry>> chartVal = null;
-        ArrayList<String> xVals = new ArrayList<String>();
-        ArrayList<Entry> yVals = new ArrayList<Entry>();
-        JSONObject jsonObject = null;
-        JSONArray resultsArray = null;
+        ArrayList<String> xVals = new ArrayList<>();
+        ArrayList<Entry> yVals = new ArrayList<>();
+        JSONObject jsonObject;
+        JSONArray resultsArray;
         try {
 
             if (!isCancelled()) {
                 jsonObject = new JSONObject(JSON);
 
-                if (jsonObject != null && jsonObject.length() != 0) {
+                if (jsonObject.length() != 0) {
                     jsonObject = jsonObject.getJSONObject("query");
                     resultsArray = jsonObject.getJSONObject("results").getJSONArray("quote");
                     if (resultsArray != null && resultsArray.length() != 0) {

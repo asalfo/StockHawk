@@ -28,11 +28,11 @@ import java.util.ArrayList;
  * and is used for the initialization and adding task as well.
  */
 public class StockTaskService extends GcmTaskService{
-  private String LOG_TAG = StockTaskService.class.getSimpleName();
+  private final String LOG_TAG = StockTaskService.class.getSimpleName();
 
-  private OkHttpClient client = new OkHttpClient();
+  private final OkHttpClient client = new OkHttpClient();
   private Context mContext;
-  private StringBuilder mStoredSymbols = new StringBuilder();
+  private final StringBuilder mStoredSymbols = new StringBuilder();
   private boolean isUpdate;
 
     // Defines and instantiates an object for handling status updates.
@@ -44,7 +44,7 @@ public class StockTaskService extends GcmTaskService{
     mContext = context;
     mBroadcaster = new BroadcastNotifier(mContext);
   }
-  String fetchData(String url) throws IOException{
+  private String fetchData(String url) throws IOException{
     Log.d(LOG_TAG, URLDecoder.decode(url));
     Request request = new Request.Builder()
         .url(url)
@@ -74,7 +74,7 @@ public class StockTaskService extends GcmTaskService{
       initQueryCursor = mContext.getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
           new String[] { "Distinct " + QuoteColumns.SYMBOL }, null,
           null, null);
-      if (initQueryCursor.getCount() == 0 || initQueryCursor == null){
+      if ((initQueryCursor != null ? initQueryCursor.getCount() : 0) == 0){
         // Init task. Populates DB with quotes for the symbols seen below
         try {
           urlStringBuilder.append(
@@ -82,12 +82,11 @@ public class StockTaskService extends GcmTaskService{
         } catch (UnsupportedEncodingException e) {
           e.printStackTrace();
         }
-      } else if (initQueryCursor != null){
+      } else {
         DatabaseUtils.dumpCursor(initQueryCursor);
         initQueryCursor.moveToFirst();
         for (int i = 0; i < initQueryCursor.getCount(); i++){
-          mStoredSymbols.append("\""+
-              initQueryCursor.getString(initQueryCursor.getColumnIndex("symbol"))+"\",");
+          mStoredSymbols.append("\"").append(initQueryCursor.getString(initQueryCursor.getColumnIndex("symbol"))).append("\",");
           initQueryCursor.moveToNext();
         }
         mStoredSymbols.replace(mStoredSymbols.length() - 1, mStoredSymbols.length(), ")");
@@ -115,35 +114,35 @@ public class StockTaskService extends GcmTaskService{
     String getResponse;
     int result = GcmNetworkManager.RESULT_FAILURE;
 
-    if (urlStringBuilder != null){
-      urlString = urlStringBuilder.toString();
-      try{
-        getResponse = fetchData(urlString);
-        Log.d(LOG_TAG,"Response = "+getResponse);
-        result = GcmNetworkManager.RESULT_SUCCESS;
-        try {
-          ContentValues contentValues = new ContentValues();
-          // update ISCURRENT to 0 (false) so new data is current
-          if (isUpdate){
-            contentValues.put(QuoteColumns.ISCURRENT, 0);
-            mContext.getContentResolver().update(QuoteProvider.Quotes.CONTENT_URI, contentValues,
-                null, null);
-          }
-            try {
-                ArrayList batchOperations =Utils.quoteJsonToContentVals(getResponse);
-                mContext.getContentResolver().applyBatch(QuoteProvider.AUTHORITY,batchOperations);
-            }catch (NumberFormatException e ){
-                mBroadcaster.broadcastIntentState(Constants.STATE_ERROR);
-                e.printStackTrace();
-                return result;
-            }
-
-        }catch (RemoteException | OperationApplicationException e) {
-            Log.e(LOG_TAG, "Error applying batch insert", e);
+    urlString = urlStringBuilder.toString();
+    try{
+      getResponse = fetchData(urlString);
+      Log.d(LOG_TAG,"Response = "+getResponse);
+      result = GcmNetworkManager.RESULT_SUCCESS;
+      try {
+        ContentValues contentValues = new ContentValues();
+        // update ISCURRENT to 0 (false) so new data is current
+        if (isUpdate){
+          contentValues.put(QuoteColumns.ISCURRENT, 0);
+          mContext.getContentResolver().update(QuoteProvider.Quotes.CONTENT_URI, contentValues,
+              null, null);
         }
-      } catch (IOException e){
-        e.printStackTrace();
+          try {
+              ArrayList batchOperations;
+            batchOperations = Utils.quoteJsonToContentVals(getResponse);
+            //noinspection unchecked
+            mContext.getContentResolver().applyBatch(QuoteProvider.AUTHORITY,batchOperations);
+          }catch (NumberFormatException e ){
+              mBroadcaster.broadcastIntentState();
+              e.printStackTrace();
+              return result;
+          }
+
+      }catch (RemoteException | OperationApplicationException e) {
+          Log.e(LOG_TAG, "Error applying batch insert", e);
       }
+    } catch (IOException e){
+      e.printStackTrace();
     }
 
     return result;

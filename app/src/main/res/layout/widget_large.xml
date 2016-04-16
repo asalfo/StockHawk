@@ -27,6 +27,7 @@
             style="@style/BidPriceTextStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:paddingLeft="10sp"
             android:paddingRight="10sp"
             tools:text="1000.00"
             />

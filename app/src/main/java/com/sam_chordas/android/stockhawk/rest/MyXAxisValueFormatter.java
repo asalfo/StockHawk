@@ -11,7 +11,7 @@ import java.text.ParseException;
  * Created by asalfo on 16/04/16.
  */
 public class MyXAxisValueFormatter implements XAxisValueFormatter {
-    private Utils.Option mOption;
+    private final Utils.Option mOption;
     public MyXAxisValueFormatter(Utils.Option option) {
         mOption = option;
     }

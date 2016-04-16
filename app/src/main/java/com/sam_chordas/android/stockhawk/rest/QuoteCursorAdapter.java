@@ -1,5 +1,6 @@
 package com.sam_chordas.android.stockhawk.rest;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Color;
@@ -29,8 +30,8 @@ public class QuoteCursorAdapter extends CursorRecyclerViewAdapter<QuoteCursorAda
   private static Context mContext;
   private static Typeface robotoLight;
   private boolean isPercent;
-  public QuoteCursorAdapter(Context context, Cursor cursor){
-    super(context, cursor);
+  public QuoteCursorAdapter(Context context){
+    super(context, null);
     mContext = context;
   }
 
@@ -39,10 +40,10 @@ public class QuoteCursorAdapter extends CursorRecyclerViewAdapter<QuoteCursorAda
     robotoLight = Typeface.createFromAsset(mContext.getAssets(), "fonts/Roboto-Light.ttf");
     View itemView = LayoutInflater.from(parent.getContext())
         .inflate(R.layout.list_item_quote, parent, false);
-    ViewHolder vh = new ViewHolder(itemView);
-    return vh;
+    return new ViewHolder(itemView);
   }
 
+  @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
   @Override
   public void onBindViewHolder(final ViewHolder viewHolder, final Cursor cursor){
     viewHolder.symbol.setText(cursor.getString(cursor.getColumnIndex("symbol")));
@@ -78,10 +79,6 @@ public class QuoteCursorAdapter extends CursorRecyclerViewAdapter<QuoteCursorAda
     String symbol = c.getString(c.getColumnIndex(QuoteColumns.SYMBOL));
     mContext.getContentResolver().delete(QuoteProvider.Quotes.withSymbol(symbol), null, null);
     notifyItemRemoved(position);
-  }
-
-  @Override public int getItemCount() {
-    return super.getItemCount();
   }
 
   public  String getItemSymbol(int position){

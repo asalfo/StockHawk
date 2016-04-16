@@ -16,8 +16,8 @@ public abstract class CursorRecyclerViewAdapter <VH extends RecyclerView.ViewHol
   private Cursor mCursor;
   private boolean dataIsValid;
   private int rowIdColumn;
-  private DataSetObserver mDataSetObserver;
-  public CursorRecyclerViewAdapter(Context context, Cursor cursor){
+  private final DataSetObserver mDataSetObserver;
+  CursorRecyclerViewAdapter(Context context, Cursor cursor){
     mCursor = cursor;
     dataIsValid = cursor != null;
     rowIdColumn = dataIsValid ? mCursor.getColumnIndex("_id") : -1;
@@ -27,7 +27,7 @@ public abstract class CursorRecyclerViewAdapter <VH extends RecyclerView.ViewHol
     }
   }
 
-  public Cursor getCursor(){
+  Cursor getCursor(){
     return mCursor;
   }
 
@@ -50,7 +50,7 @@ public abstract class CursorRecyclerViewAdapter <VH extends RecyclerView.ViewHol
     super.setHasStableIds(true);
   }
 
-  public abstract void onBindViewHolder(VH viewHolder, Cursor cursor);
+  protected abstract void onBindViewHolder(VH viewHolder, Cursor cursor);
 
   @Override
   public void onBindViewHolder(VH viewHolder, int position) {

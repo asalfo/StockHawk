@@ -7,8 +7,8 @@ import android.support.v4.content.LocalBroadcastManager;
 /**
  * Created by asalfo on 21/03/16.
  */
-public class BroadcastNotifier {
-    private LocalBroadcastManager mBroadcaster;
+class BroadcastNotifier {
+    private final LocalBroadcastManager mBroadcaster;
 
     public BroadcastNotifier(Context context) {
 
@@ -16,7 +16,7 @@ public class BroadcastNotifier {
         mBroadcaster = LocalBroadcastManager.getInstance(context);
 
     }
-    public void broadcastIntentState(int status) {
+    public void broadcastIntentState() {
 
         Intent localIntent = new Intent();
 
@@ -24,7 +24,7 @@ public class BroadcastNotifier {
         localIntent.setAction(Constants.BROADCAST_ACTION);
 
         // Puts the status into the Intent
-        localIntent.putExtra(Constants.EXTENDED_DATA_STATUS, status);
+        localIntent.putExtra(Constants.EXTENDED_DATA_STATUS, Constants.STATE_ERROR);
         localIntent.addCategory(Intent.CATEGORY_DEFAULT);
 
         // Broadcasts the Intent
