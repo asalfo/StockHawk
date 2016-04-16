@@ -1,28 +1,46 @@
 package com.sam_chordas.android.stockhawk.service;
 
+import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.db.chart.model.LineSet;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.sam_chordas.android.stockhawk.data.QuoteColumns;
 import com.sam_chordas.android.stockhawk.data.QuoteProvider;
+import com.sam_chordas.android.stockhawk.rest.ChartVal;
 import com.sam_chordas.android.stockhawk.rest.Utils;
 import com.sam_chordas.android.stockhawk.ui.DetailActivity;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Response;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
-import java.text.ParseException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.util.ArrayList;
 
 /**
  * Created by asalfo on 31/03/16.
  */
-public class StockLineChartTask extends AsyncTask<String, Void, LineSet> {
+public class StockLineChartTask extends AsyncTask<TaskParams, Void, LineData> {
 
+
+    private OkHttpClient client = new OkHttpClient();
     private String LOG_TAG = StockLineChartTask.class.getSimpleName();
+    private Utils.Option mOption;
     WeakReference<DetailActivity> mActivity;
 
 
@@ -30,54 +48,175 @@ public class StockLineChartTask extends AsyncTask<String, Void, LineSet> {
         mActivity = new WeakReference<>(activity);
     }
 
-
     @Override
-    protected LineSet doInBackground(String... params) {
-
-        String symbol =params[0];
-        LineSet lineSet = new LineSet();
-        Map<Integer, String> data = new TreeMap<Integer, String>();
-
-        Uri uri = QuoteProvider.Quotes.withSymbol(symbol);
-        Cursor stockCursor = mActivity.get().getContentResolver().query(
-                uri,
-                new String[]{QuoteColumns.BIDPRICE,QuoteColumns.CREATED},
-                QuoteColumns.CREATED + " BETWEEN ? AND ?",
-                new String[]{Utils.openDay()+" 00:00:00",Utils.openDay()+" 23:59:59"},
-                QuoteColumns.CREATED);
-
-        if (stockCursor.moveToFirst()) {
-
-            Float currentValue = 0.0f;
-            do {
-
-                try {
-                    int label = Integer.valueOf(Utils.formatDate(stockCursor.getString(stockCursor.getColumnIndex("created")), "H"));
-                    Float value =  Float.valueOf(stockCursor.getString(stockCursor.getColumnIndex("bid_price")));
-                    if( (Math.abs(value - currentValue) > 0.0f)) {
-                        currentValue = value;
-                        data.put(label, String.valueOf(value));
-                       // Log.d(LOG_TAG, label + "=>" +value+" @@@");
-                    }
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
-
-            } while(stockCursor.moveToNext());
-
-        }
-        stockCursor.close();
-        for (Map.Entry<Integer,String> entry : data.entrySet()) {
-            Log.d(LOG_TAG, entry.getKey() + "=>" +Float.valueOf(entry.getValue())+" @@@");
-            lineSet.addPoint(String.valueOf(entry.getKey()),Float.valueOf(entry.getValue()));
-        }
-        return lineSet;
+    protected void onPreExecute() {
+        super.onPreExecute();
+        mActivity.get().showProgress();
     }
 
     @Override
-    protected void onPostExecute(LineSet lineSet) {
-        if(null != mActivity.get() && lineSet.size() != 0) {
-            mActivity.get().updateGraph(lineSet);
+    protected void onCancelled(LineData lineData) {
+        super.onCancelled(lineData);
+
+    }
+
+    @Override
+    protected LineData doInBackground(TaskParams... params) {
+
+        ChartVal<ArrayList<String>, ArrayList<Entry>> chartVal;
+        LineData data = null;
+        if (!isCancelled()) {
+            String symbol = params[0].getSymbol();
+            mOption = params[0].getOption();
+
+            if (mOption == Utils.Option.ONEDAY) {
+                chartVal = buildChartValsFromCursor(mActivity.get(), symbol);
+            } else {
+                String json = fecthData(symbol, mOption);
+                chartVal = buildChartValsJson(json);
+
+            }
+
+            LineDataSet lineDataSet = new LineDataSet(chartVal.getyVals(), "DataSet");
+            lineDataSet.setAxisDependency(YAxis.AxisDependency.LEFT);
+            lineDataSet.setColor(Color.DKGRAY);
+
+            lineDataSet.setFillAlpha(60);
+            lineDataSet.setFillColor(Color.CYAN);
+            lineDataSet.setDrawFilled(true);
+            lineDataSet.setDrawCircleHole(false);
+            lineDataSet.setDrawCircles(false);
+            lineDataSet.setDrawValues(false);
+            lineDataSet.setHighLightColor(Color.rgb(244, 117, 117));
+
+            ArrayList<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
+            dataSets.add(lineDataSet);
+            data = new LineData(chartVal.getxVals(), dataSets);
+            data.setValueTextColor(Color.WHITE);
+            data.setValueTextSize(9f);
+        }
+
+        return data;
+
+
+    }
+
+
+    private ChartVal buildChartValsFromCursor(Context context, String symbol) {
+
+        ChartVal<ArrayList<String>, ArrayList<Entry>> chartVal = null;
+        ArrayList<String> xVals = new ArrayList<String>();
+        ArrayList<Entry> yVals = new ArrayList<Entry>();
+
+        Uri uri = QuoteProvider.Quotes.withSymbol(symbol);
+        Cursor cursor = context.getContentResolver().query(
+                uri,
+                new String[]{QuoteColumns.BIDPRICE, QuoteColumns.CREATED},
+                QuoteColumns.CREATED + " BETWEEN ? AND ?",
+                new String[]{Utils.openDay() + " 00:00:00", Utils.openDay() + " 23:59:59"},
+                QuoteColumns.CREATED);
+
+        if (cursor.moveToFirst()) {
+
+            int xIndex = 0;
+            do {
+
+                xVals.add(cursor.getString(cursor.getColumnIndex("created")));
+                Float value = Float.valueOf(cursor.getString(cursor.getColumnIndex("bid_price")));
+                yVals.add(new Entry(value, xIndex));
+                xIndex++;
+
+            } while (cursor.moveToNext() && !isCancelled());
+
+            cursor.close();
+
+            chartVal = new ChartVal<>(xVals, yVals);
+
+        }
+        return chartVal;
+    }
+
+
+    public ChartVal buildChartValsJson(String JSON) {
+        ChartVal<ArrayList<String>, ArrayList<Entry>> chartVal = null;
+        ArrayList<String> xVals = new ArrayList<String>();
+        ArrayList<Entry> yVals = new ArrayList<Entry>();
+        JSONObject jsonObject = null;
+        JSONArray resultsArray = null;
+        try {
+
+            if (!isCancelled()) {
+                jsonObject = new JSONObject(JSON);
+
+                if (jsonObject != null && jsonObject.length() != 0) {
+                    jsonObject = jsonObject.getJSONObject("query");
+                    resultsArray = jsonObject.getJSONObject("results").getJSONArray("quote");
+                    if (resultsArray != null && resultsArray.length() != 0) {
+                        for (int i = 0; i < resultsArray.length(); i++) {
+                                jsonObject = resultsArray.getJSONObject(i);
+                                xVals.add(jsonObject.getString("Date"));
+                            Log.d(LOG_TAG, "Date"+jsonObject.getString("Date"));
+                                Float value = Float.valueOf(jsonObject.getString("Close"));
+                                yVals.add(new Entry(value, i));
+                            if (isCancelled()) {
+                                break;
+                            }
+                        }
+                        chartVal = new ChartVal<>(xVals, yVals);
+                    }
+
+                }
+            }
+        } catch (JSONException e) {
+            Log.e(LOG_TAG, "String to JSON failed: " + e);
+        }
+        return chartVal;
+    }
+
+    private String fecthData(String symbol, Utils.Option option) {
+
+        StringBuilder urlStringBuilder = new StringBuilder();
+        String getResponse = null;
+        try {
+            String starDate = Utils.startDate(option);
+
+            // Base URL for the Yahoo query
+            urlStringBuilder.append("https://query.yahooapis.com/v1/public/yql?q=");
+            urlStringBuilder.append(URLEncoder.encode("select * from yahoo.finance.historicaldata where symbol "
+                    + "in (" + "\"" + symbol + "\"" + " )", "UTF-8"));
+            urlStringBuilder.append(URLEncoder.encode("and startDate = \"" + starDate + "\" and endDate = \"" + Utils.openDay() + "\"", "UTF-8"));
+            urlStringBuilder.append(URLEncoder.encode("| sort(field=\"Date\", descending=\"false\")", "UTF-8"));
+            urlStringBuilder.append("&format=json&diagnostics=true&env=store%3A%2F%2Fdatatables."
+                    + "org%2Falltableswithkeys&callback=");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+
+        if (!isCancelled()) {
+            try {
+                String url = urlStringBuilder.toString();
+
+                Log.d(LOG_TAG, "Url" + URLDecoder.decode(url));
+                Request request = new Request.Builder()
+                        .url(url)
+                        .build();
+
+                Response response = client.newCall(request).execute();
+                getResponse = response.body().string();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+
+        return getResponse;
+
+    }
+
+    @Override
+    protected void onPostExecute(LineData data) {
+        if (null != mActivity.get() && data != null) {
+            mActivity.get().updateGraph(data,mOption);
         }
     }
 }

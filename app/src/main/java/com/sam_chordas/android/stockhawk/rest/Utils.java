@@ -3,10 +3,14 @@ package com.sam_chordas.android.stockhawk.rest;
 import android.content.ContentProviderOperation;
 import android.content.Context;
 import android.content.res.Resources;
+import android.database.Cursor;
+import android.net.Uri;
 import android.support.annotation.Nullable;
 import android.text.Html;
 import android.text.Spanned;
 import android.util.Log;
+
+import com.github.mikephil.charting.data.Entry;
 import com.sam_chordas.android.stockhawk.data.QuoteColumns;
 import com.sam_chordas.android.stockhawk.data.QuoteProvider;
 
@@ -29,6 +33,12 @@ public class Utils {
   private static String LOG_TAG = Utils.class.getSimpleName();
 
   public static boolean showPercent = true;
+
+
+
+  public enum Option {
+    ONEDAY, FIVEDAYS, THREEMONTHS, SIXMONTHS,YEAR
+  }
 
   public static ArrayList quoteJsonToContentVals(String JSON){
     ArrayList<ContentProviderOperation> batchOperations = new ArrayList<>();
@@ -121,15 +131,22 @@ public class Utils {
     return dateFormat.format(cal.getTime());
   }
 
+
   public static  String formatDate(String string, String format) throws ParseException {
     DateFormat inFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     DateFormat outFormat = new SimpleDateFormat(format);
     Calendar cal = Calendar.getInstance();
     cal.setTime(inFormat.parse(string));
-    Log.d(LOG_TAG, string);
-    Log.d(LOG_TAG,outFormat.format(cal.getTime()));
     return outFormat.format(cal.getTime());
   }
+
+    public static  String formatDate(String string, String inFormat,String outFormat) throws ParseException {
+        DateFormat in = new SimpleDateFormat(inFormat);
+        DateFormat out = new SimpleDateFormat(outFormat);
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(in.parse(string));
+        return out.format(cal.getTime());
+    }
 
   public static  long DateToTimeStamp(String stringDate) throws ParseException {
     DateFormat inFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -162,6 +179,31 @@ public class Utils {
     return  calendar.get(Calendar.DAY_OF_WEEK) != Calendar.SATURDAY &&
                          calendar.get(Calendar.DAY_OF_WEEK) != Calendar.SUNDAY;
 
+  }
+
+  public static String startDate(Option option){
+
+    Calendar calendar = Calendar.getInstance();
+    calendar.setTime(new Date());
+    switch (option){
+
+      case FIVEDAYS:
+        calendar.add(Calendar.DATE,-7);
+        break;
+      case THREEMONTHS:
+        calendar.add(Calendar.DATE,-90);
+        break;
+      case SIXMONTHS:
+        calendar.add(Calendar.DATE,-180);
+        break;
+      case YEAR:
+        calendar.add(calendar.DATE,-360);
+        break;
+    }
+
+    Log.d(LOG_TAG, new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime())+" HORS");
+
+      return new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime());
   }
   public static  String openDay(){
 
@@ -216,5 +258,93 @@ public class Utils {
       }
     }
     return 1;
+  }
+
+
+
+
+  public static ChartVal buildChartValsJson(String JSON){
+    ChartVal<ArrayList<String>, ArrayList<Entry>> chartVal =null;
+    ArrayList<String> xVals = new ArrayList<String>();
+    ArrayList<Entry>  yVals = new ArrayList<Entry>();
+    JSONObject jsonObject = null;
+    JSONArray resultsArray = null;
+    try{
+
+      jsonObject = new JSONObject(JSON);
+
+      if (jsonObject != null && jsonObject.length() != 0){
+        jsonObject = jsonObject.getJSONObject("query");
+
+        resultsArray = jsonObject.getJSONObject("results").getJSONArray("quote");
+
+        if (resultsArray != null && resultsArray.length() != 0){
+          for (int i = 0; i < resultsArray.length(); i++){
+            try {
+            jsonObject = resultsArray.getJSONObject(i);
+
+              String date = Utils.formatDate(jsonObject.getString("Date"),"yyyy-MM-dd", "MMM dd");
+
+              xVals.add(date);
+              Float value = Float.valueOf(jsonObject.getString("Close"));
+              yVals.add(new Entry(value, i));
+                Log.d(LOG_TAG,"value->"+date);
+
+            } catch (ParseException e) {
+              e.printStackTrace();
+                Log.d(LOG_TAG,"value->"+e.getMessage());
+            }
+
+
+          }
+
+          chartVal = new ChartVal<>(xVals, yVals);
+        }
+
+
+      }
+    } catch (JSONException e){
+      Log.e(LOG_TAG, "String to JSON failed: " + e);
+    }
+    return chartVal;
+  }
+
+  public static ChartVal buildChartValsFromCursor(Context context, String symbol) {
+
+    ChartVal<ArrayList<String>, ArrayList<Entry>> chartVal =null;
+    ArrayList<String> xVals = new ArrayList<String>();
+    ArrayList<Entry>  yVals = new ArrayList<Entry>();
+
+    Uri uri = QuoteProvider.Quotes.withSymbol(symbol);
+    Cursor cursor = context.getContentResolver().query(
+                              uri,
+                              new String[]{QuoteColumns.BIDPRICE,QuoteColumns.CREATED},
+                              QuoteColumns.CREATED + " BETWEEN ? AND ?",
+                              new String[]{Utils.openDay()+" 00:00:00",Utils.openDay()+" 23:59:59"},
+                              QuoteColumns.CREATED);
+
+    if (cursor.moveToFirst()) {
+
+      int xIndex = 0;
+      do {
+
+        try {
+          xVals.add(Utils.formatDate(cursor.getString(cursor.getColumnIndex("created")), "H:mm"));
+          Float value = Float.valueOf(cursor.getString(cursor.getColumnIndex("bid_price")));
+          yVals.add(new Entry(value, xIndex));
+          xIndex++;
+
+        } catch (ParseException e) {
+          e.printStackTrace();
+        }
+
+      } while (cursor.moveToNext());
+
+      cursor.close();
+
+      chartVal = new ChartVal<>(xVals, yVals);
+
+    }
+    return chartVal;
   }
 }
