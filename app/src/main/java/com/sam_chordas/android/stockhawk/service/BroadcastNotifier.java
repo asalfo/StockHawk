@@ -16,7 +16,7 @@ class BroadcastNotifier {
         mBroadcaster = LocalBroadcastManager.getInstance(context);
 
     }
-    public void broadcastIntentState() {
+    public void broadcastIntentState(int state) {
 
         Intent localIntent = new Intent();
 
@@ -24,7 +24,7 @@ class BroadcastNotifier {
         localIntent.setAction(Constants.BROADCAST_ACTION);
 
         // Puts the status into the Intent
-        localIntent.putExtra(Constants.EXTENDED_DATA_STATUS, Constants.STATE_ERROR);
+        localIntent.putExtra(Constants.EXTENDED_DATA_STATUS, state);
         localIntent.addCategory(Intent.CATEGORY_DEFAULT);
 
         // Broadcasts the Intent

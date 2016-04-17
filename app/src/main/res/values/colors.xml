@@ -5,4 +5,8 @@
   <color name="material_red_700">#D50000</color>
   <color name="material_green_700">#00C853</color>
   <color name="white">#ffffffff</color>
+  <color name="grey">#ff8e8c8c</color>
+
+  <!-- the activated state color -->
+  <color name="activated">#E0E0E0</color>
 </resources>

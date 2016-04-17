@@ -82,7 +82,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         mYearLow = (TextView) findViewById(R.id.yearLow);
         mYearHigh = (TextView) findViewById(R.id.yearHigh);
         mLineChartView = (LineChart) findViewById(R.id.linechart);
-        mLoading =  (ProgressBar) findViewById(R.id.loading);
+        mLoading = (ProgressBar) findViewById(R.id.loading);
 
         chartTask = new StockLineChartTask(this);
 
@@ -102,11 +102,11 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         Button fiveDays = (Button) findViewById(R.id.five_days);
         if (fiveDays != null) {
             fiveDays.setOnClickListener(new View.OnClickListener() {
-                                           @Override
-                                           public void onClick(View v) {
-                                               drawChart(mSymbol, Utils.Option.FIVEDAYS);
-                                           }
-                                       }
+                                            @Override
+                                            public void onClick(View v) {
+                                                drawChart(mSymbol, Utils.Option.FIVEDAYS);
+                                            }
+                                        }
             );
         }
 
@@ -137,11 +137,11 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         Button oneYear = (Button) findViewById(R.id.year);
         if (oneYear != null) {
             oneYear.setOnClickListener(new View.OnClickListener() {
-                                          @Override
-                                          public void onClick(View v) {
-                                              drawChart(mSymbol, Utils.Option.YEAR);
-                                          }
-                                      }
+                                           @Override
+                                           public void onClick(View v) {
+                                               drawChart(mSymbol, Utils.Option.YEAR);
+                                           }
+                                       }
             );
         }
 
@@ -160,7 +160,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
             chartTask = new StockLineChartTask(this);
         }
 
-        chartTask.execute(new TaskParams(symbol,option));
+        chartTask.execute(new TaskParams(symbol, option));
     }
 
 
@@ -220,7 +220,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
 
             if (actionBar != null) {
                 actionBar.setDisplayShowTitleEnabled(true);
-                actionBar.setTitle(data.getString(data.getColumnIndex("symbol")));
+                actionBar.setTitle(data.getString(data.getColumnIndex("symbol")).toUpperCase());
                 actionBar.setSubtitle(data.getString(data.getColumnIndex("name")));
             }
 
@@ -289,9 +289,14 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
     }
 
 
-    public void showProgress(){
+    public void showProgress() {
         mLoading.setVisibility(View.VISIBLE);
         mLineChartView.setData(new LineData());
         mLineChartView.invalidate();
+    }
+
+    public void hideProgress() {
+        mLoading.setVisibility(View.GONE);
+        mLineChartView.setVisibility(View.GONE);
     }
 }

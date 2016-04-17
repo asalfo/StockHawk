@@ -66,11 +66,7 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
     private boolean isConnected;
     private StockServiceStateReceiver mStockServiceStateReceiver;
     private IntentFilter statusIntentFilter;
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-    private GoogleApiClient client;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,17 +79,6 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
         isConnected = activeNetwork != null &&
                 activeNetwork.isConnectedOrConnecting();
 
-
-        // Defines selection criteria for the rows you want to delete
-        String mSelectionClause = QuoteColumns.CREATED + " > ?";
-        String[] mSelectionArgs = {Utils.openDay() + " 23:59:59"};
-
-
-        getContentResolver().delete(
-                QuoteProvider.Quotes.CONTENT_URI,
-                mSelectionClause,
-                mSelectionArgs
-        );
 
         setContentView(R.layout.activity_my_stocks);
         // The intent service is for executing immediate pulls from the Yahoo API
@@ -123,6 +108,7 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
         mCoordinatorLayout = (CoordinatorLayout) findViewById(R.id
                 .coordinatorLayout);
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+
         if (recyclerView != null) {
             recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
@@ -157,13 +143,12 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
                                     // On FAB click, receive user input. Make sure the stock doesn't already exist
                                     // in the DB and proceed accordingly
                                     Cursor c = getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
-                                            new String[]{QuoteColumns.SYMBOL}, QuoteColumns.SYMBOL + "= ?",
-                                            new String[]{input.toString()}, null);
-                                    if ((c != null ? c.getCount() : 0) != 0) {
+                                            new String[]{QuoteColumns.SYMBOL}, "UPPER ("+QuoteColumns.SYMBOL + ") = ?",
+                                            new String[]{input.toString().toUpperCase()}, null);
+                                    if (c.getCount() != 0) {
 
                                         buildSnackbar(mCoordinatorLayout, "This stock is already saved!", Constants.STATE_ERROR);
                                         c.close();
-                                        return;
 
                                     } else {
                                         // Add the stock to DB
@@ -206,9 +191,7 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
             // are updated.
             GcmNetworkManager.getInstance(this).schedule(periodicTask);
         }
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
+
     }
 
     private void onItemSelected(long itemId) {
@@ -337,12 +320,12 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
             switch (intent.getIntExtra(Constants.EXTENDED_DATA_STATUS,
                     Constants.STATE_ACTION_COMPLETE)) {
 
-                // Logs "started" state
                 case Constants.STATE_ERROR:
                     buildSnackbar(mCoordinatorLayout, "Stock symbol not found", Constants.STATE_ERROR);
                     break;
                 case Constants.STATE_ACTION_COMPLETE:
-                    buildSnackbar(mCoordinatorLayout, "Stock added successfully", Constants.STATE_ACTION_COMPLETE);
+                    updateWidgets();
+
                 default:
                     break;
             }
@@ -367,5 +350,13 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
             mStockServiceStateReceiver = null;
         }
         super.onDestroy();
+    }
+
+
+    private void updateWidgets() {
+        // Setting the package ensures that only components in our app will receive the broadcast
+        Intent dataUpdatedIntent = new Intent(Constants.ACTION_DATA_UPDATED)
+                .setPackage(this.getPackageName());
+        this.sendBroadcast(dataUpdatedIntent);
     }
 }

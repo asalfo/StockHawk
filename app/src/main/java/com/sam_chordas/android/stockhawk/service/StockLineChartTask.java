@@ -41,8 +41,8 @@ public class StockLineChartTask extends AsyncTask<TaskParams, Void, LineData> {
 
     private final OkHttpClient client = new OkHttpClient();
     private final String LOG_TAG = StockLineChartTask.class.getSimpleName();
-    private Utils.Option mOption;
     private final WeakReference<DetailActivity> mActivity;
+    private Utils.Option mOption;
 
 
     public StockLineChartTask(DetailActivity activity) {
@@ -77,26 +77,27 @@ public class StockLineChartTask extends AsyncTask<TaskParams, Void, LineData> {
                 chartVal = buildChartValsJson(json);
 
             }
+            if(null != chartVal) {
+                LineDataSet lineDataSet;
+                @SuppressWarnings("unchecked") List<Entry> entry = (List<Entry>) chartVal.getyVals();
+                lineDataSet = new LineDataSet(entry, "DataSet");
+                lineDataSet.setAxisDependency(YAxis.AxisDependency.LEFT);
+                lineDataSet.setColor(Color.DKGRAY);
 
-            LineDataSet lineDataSet;
-            @SuppressWarnings("unchecked") List<Entry> entry = (List<Entry>) chartVal.getyVals();
-            lineDataSet = new LineDataSet(entry, "DataSet");
-            lineDataSet.setAxisDependency(YAxis.AxisDependency.LEFT);
-            lineDataSet.setColor(Color.DKGRAY);
+                lineDataSet.setFillAlpha(60);
+                lineDataSet.setFillColor(Color.CYAN);
+                lineDataSet.setDrawFilled(true);
+                lineDataSet.setDrawCircleHole(false);
+                lineDataSet.setDrawCircles(false);
+                lineDataSet.setDrawValues(false);
+                lineDataSet.setHighLightColor(Color.rgb(244, 117, 117));
 
-            lineDataSet.setFillAlpha(60);
-            lineDataSet.setFillColor(Color.CYAN);
-            lineDataSet.setDrawFilled(true);
-            lineDataSet.setDrawCircleHole(false);
-            lineDataSet.setDrawCircles(false);
-            lineDataSet.setDrawValues(false);
-            lineDataSet.setHighLightColor(Color.rgb(244, 117, 117));
-
-            ArrayList<ILineDataSet> dataSets = new ArrayList<>();
-            dataSets.add(lineDataSet);
-            data = new LineData((List<String>) chartVal.getxVals(), dataSets);
-            data.setValueTextColor(Color.WHITE);
-            data.setValueTextSize(9f);
+                ArrayList<ILineDataSet> dataSets = new ArrayList<>();
+                dataSets.add(lineDataSet);
+                data = new LineData((List<String>) chartVal.getxVals(), dataSets);
+                data.setValueTextColor(Color.WHITE);
+                data.setValueTextSize(9f);
+            }
         }
 
         return data;
@@ -220,6 +221,8 @@ public class StockLineChartTask extends AsyncTask<TaskParams, Void, LineData> {
     protected void onPostExecute(LineData data) {
         if (null != mActivity.get() && data != null) {
             mActivity.get().updateGraph(data,mOption);
+        }else{
+            mActivity.get().hideProgress();
         }
     }
 }

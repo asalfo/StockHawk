@@ -12,7 +12,7 @@
         style="@style/TextStyleLarge"
         tools:text="36.6"
 
-        />
+        android:layout_marginStart="16sp" />
 
     <TextView
         android:id="@+id/change"
@@ -21,7 +21,8 @@
         android:layout_marginLeft="4sp"
         android:layout_alignBaseline="@id/bid_price"
         tools:text="36.6"
-        />
+        android:layout_marginStart="4sp"
+        android:layout_toEndOf="@id/bid_price" />
 
     <TextView
         android:id="@+id/cur_per_change"
@@ -30,7 +31,8 @@
         android:layout_marginLeft="4sp"
         android:layout_alignBaseline="@id/bid_price"
         tools:text="36.6"
-        />
+        android:layout_marginStart="4sp"
+        android:layout_toEndOf="@id/change" />
 
     <TextView
         android:id="@+id/date"
@@ -38,7 +40,7 @@
         style="@style/TextStyleSmall"
         android:layout_marginLeft="16sp"
         tools:text="Mar 30, 4:00 PM EDT"
-        />
+        android:layout_marginStart="16sp" />
 
     <android.support.v7.widget.GridLayout
         android:id="@+id/stockInfo"
