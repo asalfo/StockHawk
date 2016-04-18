@@ -60,11 +60,11 @@ public class QuoteWidgetIntentService extends IntentService {
 
         // Extract the quote data from the Cursor
 
-        long id = data.getLong(data.getColumnIndex("_id"));
-        symbol = data.getString(data.getColumnIndex("symbol"));
-        String change = data.getString(data.getColumnIndex("change"));
-        String bid_price = data.getString(data.getColumnIndex("bid_price"));
-        int is_up = data.getInt(data.getColumnIndex("bid_price"));
+        long id = data.getLong(data.getColumnIndex(QuoteColumns._ID));
+        symbol = data.getString(data.getColumnIndex(QuoteColumns.SYMBOL));
+        String change = data.getString(data.getColumnIndex(QuoteColumns.CHANGE));
+        String bid_price = data.getString(data.getColumnIndex(QuoteColumns.BIDPRICE));
+        int is_up = data.getInt(data.getColumnIndex(QuoteColumns.ISUP));
         data.close();
 
         // Perform this loop procedure for each Today widget
@@ -86,9 +86,9 @@ public class QuoteWidgetIntentService extends IntentService {
             }
 
             if(is_up == 1) {
-                views.setInt(R.id.change, "setBackgroundResource", R.drawable.percent_change_pill_green);
+                views.setInt(R.id.change, Constants.SET_BACKGROUND_RESOURCE, R.drawable.percent_change_pill_green);
             }else{
-                views.setInt(R.id.change, "setBackgroundResource", R.drawable.percent_change_pill_red);
+                views.setInt(R.id.change, Constants.SET_BACKGROUND_RESOURCE, R.drawable.percent_change_pill_red);
             }
 
 

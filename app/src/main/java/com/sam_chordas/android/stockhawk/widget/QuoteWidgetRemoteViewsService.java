@@ -12,12 +12,14 @@ import android.widget.TextView;
 import com.sam_chordas.android.stockhawk.R;
 import com.sam_chordas.android.stockhawk.data.QuoteColumns;
 import com.sam_chordas.android.stockhawk.data.QuoteProvider;
+import com.sam_chordas.android.stockhawk.service.Constants;
 
 /**
  * Created by asalfo on 17/04/16.
  */
 public class QuoteWidgetRemoteViewsService extends RemoteViewsService {
 
+    public static final String CURRENT = "1";
     public final String LOG_TAG = QuoteWidgetRemoteViewsService.class.getSimpleName();
 
     @Override
@@ -45,7 +47,7 @@ public class QuoteWidgetRemoteViewsService extends RemoteViewsService {
                         new String[]{QuoteColumns._ID, QuoteColumns.SYMBOL, QuoteColumns.BIDPRICE,
                                 QuoteColumns.PERCENT_CHANGE, QuoteColumns.CHANGE, QuoteColumns.ISUP},
                         QuoteColumns.ISCURRENT + " = ?",
-                        new String[]{"1"},
+                        new String[]{CURRENT},
                         null);
 
                 Binder.restoreCallingIdentity(identityToken);
@@ -72,22 +74,22 @@ public class QuoteWidgetRemoteViewsService extends RemoteViewsService {
                 }
                 RemoteViews views = new RemoteViews(getPackageName(),
                         R.layout.widget_collection_item);
-                String symbol = data.getString(data.getColumnIndex("symbol"));
-                String change = data.getString(data.getColumnIndex("change"));
+                String symbol = data.getString(data.getColumnIndex(QuoteColumns.SYMBOL));
+                String change = data.getString(data.getColumnIndex(QuoteColumns.CHANGE));
 
 
                 views.setTextViewText(R.id.stock_symbol, symbol);
                 views.setTextViewText(R.id.change,change);
 
-                if(data.getInt(data.getColumnIndex("is_up")) == 1) {
-                    views.setInt(R.id.change, "setBackgroundResource", R.drawable.percent_change_pill_green);
+                if(data.getInt(data.getColumnIndex(QuoteColumns.ISUP)) == 1) {
+                    views.setInt(R.id.change, Constants.SET_BACKGROUND_RESOURCE, R.drawable.percent_change_pill_green);
                 }else{
-                    views.setInt(R.id.change, "setBackgroundResource", R.drawable.percent_change_pill_red);
+                    views.setInt(R.id.change, Constants.SET_BACKGROUND_RESOURCE, R.drawable.percent_change_pill_red);
                 }
 
                 final Intent fillInIntent = new Intent();
 
-                long id = data.getLong(data.getColumnIndex("_id"));
+                long id = data.getLong(data.getColumnIndex(QuoteColumns._ID));
                 Uri contentUri = QuoteProvider.Quotes.withId(id);
                 fillInIntent.setData(contentUri);
                 views.setOnClickFillInIntent(R.id.widget_list_item, fillInIntent);
@@ -108,7 +110,7 @@ public class QuoteWidgetRemoteViewsService extends RemoteViewsService {
             @Override
             public long getItemId(int position) {
                 if (data.moveToPosition(position))
-                    return data.getLong(data.getColumnIndex("_id"));
+                    return data.getLong(data.getColumnIndex(QuoteColumns._ID));
                 return position;
             }
 

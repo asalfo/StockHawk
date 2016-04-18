@@ -49,6 +49,7 @@ import com.sam_chordas.android.stockhawk.touch_helper.SimpleItemTouchHelperCallb
 
 public class MyStocksActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
+    public static final String SYMBOL = "symbol";
     /**
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
      */
@@ -66,6 +67,7 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
     private boolean isConnected;
     private StockServiceStateReceiver mStockServiceStateReceiver;
     private IntentFilter statusIntentFilter;
+
 
 
     @Override
@@ -86,7 +88,7 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
         mServiceIntent = new Intent(this, StockIntentService.class);
         if (savedInstanceState == null) {
             // Run the initialize task service so that some stocks appear upon an empty database
-            mServiceIntent.putExtra("tag", "init");
+            mServiceIntent.putExtra(Constants.TAG, Constants.INIT);
             if (isConnected) {
                 startService(mServiceIntent);
             } else {
@@ -147,13 +149,13 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
                                             new String[]{input.toString().toUpperCase()}, null);
                                     if (c.getCount() != 0) {
 
-                                        buildSnackbar(mCoordinatorLayout, "This stock is already saved!", Constants.STATE_ERROR);
+                                        buildSnackbar(mCoordinatorLayout,getResources().getString(R.string.stock_exists), Constants.STATE_ERROR);
                                         c.close();
 
                                     } else {
                                         // Add the stock to DB
-                                        mServiceIntent.putExtra("tag", "add");
-                                        mServiceIntent.putExtra("symbol", input.toString());
+                                        mServiceIntent.putExtra(Constants.TAG, Constants.ADD);
+                                        mServiceIntent.putExtra(SYMBOL, input.toString());
                                         startService(mServiceIntent);
                                     }
 
@@ -175,15 +177,13 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
         if (isConnected) {
             long period = 3600L;
             long flex = 10L;
-            String periodicTag = "periodic";
-
             // create a periodic task to pull stocks once every hour after the app has been opened. This
             // is so Widget data stays up to date.
             PeriodicTask periodicTask = new PeriodicTask.Builder()
                     .setService(StockTaskService.class)
                     .setPeriod(period)
                     .setFlex(flex)
-                    .setTag(periodicTag)
+                    .setTag(Constants.PERIODIC_TAG)
                     .setRequiredNetwork(Task.NETWORK_STATE_CONNECTED)
                     .setRequiresCharging(false)
                     .build();
@@ -321,7 +321,7 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
                     Constants.STATE_ACTION_COMPLETE)) {
 
                 case Constants.STATE_ERROR:
-                    buildSnackbar(mCoordinatorLayout, "Stock symbol not found", Constants.STATE_ERROR);
+                    buildSnackbar(mCoordinatorLayout, getResources().getString(R.string.stock_not_found), Constants.STATE_ERROR);
                     break;
                 case Constants.STATE_ACTION_COMPLETE:
                     updateWidgets();

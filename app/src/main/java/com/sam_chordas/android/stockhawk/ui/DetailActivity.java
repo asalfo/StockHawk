@@ -39,7 +39,6 @@ import java.text.ParseException;
  */
 public class DetailActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     private final String LOG_TAG = DetailActivity.class.getSimpleName();
-    public static final String SYMBOL_KEY = "symbol";
     private static final int CURSOR_LOADER_ID = 0;
     private ProgressBar mLoading;
     private LineChart mLineChartView;
@@ -186,30 +185,30 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         Log.d(LOG_TAG, "" + data.getCount());
         if (data.moveToFirst()) {
-            mSymbol = data.getString(data.getColumnIndex("symbol"));
+            mSymbol = data.getString(data.getColumnIndex(QuoteColumns.SYMBOL));
             int color;
             try {
-                mLastUpdate.setText(Utils.formatDate(data.getString(data.getColumnIndex("created")), "MMM dd, h:m a z"));
+                mLastUpdate.setText(Utils.formatDate(data.getString(data.getColumnIndex(QuoteColumns.CREATED)),Utils.DATE_FORMAT_WITH_TZ ));
             } catch (ParseException ex) {
                 Log.d(LOG_TAG, ex.getMessage());
             }
-            mChange.setText(data.getString(data.getColumnIndex("change")));
-            mBidPrice.setText(data.getString(data.getColumnIndex("bid_price")));
-            mCurrPercentChange.setText(data.getString(data.getColumnIndex("percent_change")));
-            mPercentChange.setText(Utils.formatText(this, R.string.percent_change, data.getString(data.getColumnIndex("percent_change"))))
+            mChange.setText(data.getString(data.getColumnIndex(QuoteColumns.CHANGE)));
+            mBidPrice.setText(data.getString(data.getColumnIndex(QuoteColumns.BIDPRICE)));
+            mCurrPercentChange.setText(data.getString(data.getColumnIndex(QuoteColumns.PERCENT_CHANGE)));
+            mPercentChange.setText(Utils.formatText(this, R.string.percent_change, data.getString(data.getColumnIndex(QuoteColumns.PERCENT_CHANGE))))
             ;
 
-            mVolume.setText(Utils.formatText(this, R.string.volume, data.getString(data.getColumnIndex("volume"))));
-            mOpen.setText(Utils.formatText(this, R.string.open, data.getString(data.getColumnIndex("open"))));
-            mPreviousClose.setText(Utils.formatText(this, R.string.last, data.getString(data.getColumnIndex("previous_close"))));
-            Float low = data.getFloat(data.getColumnIndex("days_low"));
-            Float high = data.getFloat(data.getColumnIndex("days_high"));
+            mVolume.setText(Utils.formatText(this, R.string.volume, data.getString(data.getColumnIndex(QuoteColumns.VOLUME))));
+            mOpen.setText(Utils.formatText(this, R.string.open, data.getString(data.getColumnIndex(QuoteColumns.OPEN))));
+            mPreviousClose.setText(Utils.formatText(this, R.string.last, data.getString(data.getColumnIndex(QuoteColumns.PREVIOUS_CLOSE))));
+            Float low = data.getFloat(data.getColumnIndex(QuoteColumns.DAYS_LOW));
+            Float high = data.getFloat(data.getColumnIndex(QuoteColumns.DAYS_HIGH));
             mDaysLow.setText(Utils.formatText(this, R.string.days_low, String.valueOf(low)));
             mDaysHigh.setText(Utils.formatText(this, R.string.days_high, String.valueOf(high)));
-            mYearLow.setText(Utils.formatText(this, R.string.year_low, data.getString(data.getColumnIndex("year_low"))));
-            mYearHigh.setText(Utils.formatText(this, R.string.year_high, data.getString(data.getColumnIndex("year_high"))));
+            mYearLow.setText(Utils.formatText(this, R.string.year_low, data.getString(data.getColumnIndex(QuoteColumns.YEAR_LOW))));
+            mYearHigh.setText(Utils.formatText(this, R.string.year_high, data.getString(data.getColumnIndex(QuoteColumns.YEAR_HIGH))));
 
-            if (data.getInt(data.getColumnIndex("is_up")) == 1) {
+            if (data.getInt(data.getColumnIndex(QuoteColumns.ISUP)) == 1) {
                 color = ContextCompat.getColor(this, R.color.material_green_700);
             } else {
                 color = ContextCompat.getColor(this, R.color.material_red_700);
@@ -220,8 +219,8 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
 
             if (actionBar != null) {
                 actionBar.setDisplayShowTitleEnabled(true);
-                actionBar.setTitle(data.getString(data.getColumnIndex("symbol")).toUpperCase());
-                actionBar.setSubtitle(data.getString(data.getColumnIndex("name")));
+                actionBar.setTitle(data.getString(data.getColumnIndex(QuoteColumns.SYMBOL)).toUpperCase());
+                actionBar.setSubtitle(data.getString(data.getColumnIndex(QuoteColumns.NAME)));
             }
 
 
@@ -239,7 +238,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
 
 
         mLineChartView.setDescription("");
-        mLineChartView.setNoDataTextDescription("You need to provide data for the chart.");
+        mLineChartView.setNoDataTextDescription(getResources().getString(R.string.no_data));
         mLineChartView.setData(data);
         mLineChartView.getAxisLeft().setEnabled(false);
         mLineChartView.setDragEnabled(true);

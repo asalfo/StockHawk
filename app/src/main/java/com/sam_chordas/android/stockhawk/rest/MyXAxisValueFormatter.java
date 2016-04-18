@@ -4,6 +4,7 @@ import android.util.Log;
 
 import com.github.mikephil.charting.formatter.XAxisValueFormatter;
 import com.github.mikephil.charting.utils.ViewPortHandler;
+import com.sam_chordas.android.stockhawk.service.Constants;
 
 import java.text.ParseException;
 
@@ -11,6 +12,7 @@ import java.text.ParseException;
  * Created by asalfo on 16/04/16.
  */
 public class MyXAxisValueFormatter implements XAxisValueFormatter {
+
     private final Utils.Option mOption;
     public MyXAxisValueFormatter(Utils.Option option) {
         mOption = option;
@@ -19,18 +21,18 @@ public class MyXAxisValueFormatter implements XAxisValueFormatter {
     @Override
     public String getXValue(String original, int index, ViewPortHandler viewPortHandler) {
         String format;
-        String inFormat = "yyyy-MM-dd";
+        String inFormat = Utils.DATE_DEFAULT_FORMAT;
         String xValue = null;
         switch (mOption){
             case ONEDAY:
-                format = "H:mm";
-                inFormat ="yyyy-MM-dd HH:mm:ss";
+                format = Utils.HOUR_FORMAT;
+                inFormat =Utils.DATE_HOUR_FORMAT;
                 break;
             case FIVEDAYS:
-                format = "MMM dd";
+                format = Utils.CHART_LABEL_DATE_FORMAT;
                 break;
             default:
-                format = "yyyy-MM";
+                format = Utils.YEAR_MONTH_FORMAT;
         }
 
         try {

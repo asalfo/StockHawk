@@ -27,6 +27,7 @@ import java.util.List;
 public class SettingsFragment extends PreferenceFragment
         implements Preference.OnPreferenceChangeListener  {
 
+    public static final String DEFAULT_VALUE = "GOOG";
     int mWidgetId =  AppWidgetManager.INVALID_APPWIDGET_ID ;
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -128,14 +129,14 @@ public class SettingsFragment extends PreferenceFragment
             return;
         }
         while (data.moveToNext()) {
-            entries.add(data.getString(data.getColumnIndex("symbol")));
-            entryValues.add(data.getString(data.getColumnIndex("symbol")));
+            entries.add(data.getString(data.getColumnIndex(QuoteColumns.SYMBOL)));
+            entryValues.add(data.getString(data.getColumnIndex(QuoteColumns.SYMBOL)));
         }
         data.close();
 
 
         lp.setEntries(entries.toArray(new CharSequence[entries.size()]));
-        lp.setDefaultValue("GOOG");
+        lp.setDefaultValue(DEFAULT_VALUE);
         lp.setEntryValues(entryValues.toArray(new CharSequence[entryValues.size()]));
     }
 }

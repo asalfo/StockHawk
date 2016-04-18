@@ -31,6 +31,12 @@ import org.json.JSONObject;
 public class Utils {
 
   private static final String LOG_TAG = Utils.class.getSimpleName();
+  public static String DATE_DEFAULT_FORMAT = "yyyy-MM-dd";
+  public static String DATE_FORMAT_WITH_TZ = "MMM dd, h:m a z";
+  public static String CHART_LABEL_DATE_FORMAT = "MMM dd";
+  public static String DATE_HOUR_FORMAT = "yyyy-MM-dd HH:mm:ss";
+  public static String HOUR_FORMAT = "H:mm";
+  public static final String YEAR_MONTH_FORMAT = "yyyy-MM";
 
   public static boolean showPercent = true;
 
@@ -126,14 +132,14 @@ public class Utils {
 
 
   private static  String currentTime(){
-    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss",Locale.getDefault());
+    DateFormat dateFormat = new SimpleDateFormat(DATE_HOUR_FORMAT,Locale.getDefault());
     Calendar cal = Calendar.getInstance();
     return dateFormat.format(cal.getTime());
   }
 
 
   public static  String formatDate(String string, String format) throws ParseException {
-    DateFormat inFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss",Locale.getDefault());
+    DateFormat inFormat = new SimpleDateFormat(DATE_HOUR_FORMAT,Locale.getDefault());
     DateFormat outFormat = new SimpleDateFormat(format,Locale.getDefault());
     Calendar cal = Calendar.getInstance();
     cal.setTime(inFormat.parse(string));
@@ -149,7 +155,7 @@ public class Utils {
     }
 
   public static  long DateToTimeStamp(String stringDate) throws ParseException {
-    DateFormat inFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss",Locale.getDefault());
+    DateFormat inFormat = new SimpleDateFormat(DATE_HOUR_FORMAT,Locale.getDefault());
     Calendar cal = Calendar.getInstance();
     cal.setTime(inFormat.parse(stringDate));
     return cal.getTimeInMillis();
@@ -201,7 +207,7 @@ public class Utils {
         break;
     }
 
-      return new SimpleDateFormat("yyyy-MM-dd",Locale.getDefault()).format(calendar.getTime());
+      return new SimpleDateFormat(DATE_DEFAULT_FORMAT,Locale.getDefault()).format(calendar.getTime());
   }
   public static  String openDay(){
 
@@ -219,13 +225,13 @@ public class Utils {
       default:
 
     }
-    return new SimpleDateFormat("yyyy-MM-dd",Locale.getDefault()).format(calendar.getTime());
+    return new SimpleDateFormat(DATE_DEFAULT_FORMAT,Locale.getDefault()).format(calendar.getTime());
   }
 
 
   public static  String openDay(String format){
     if (null == format){
-      format = "yyyy-MM-dd";
+      format = DATE_DEFAULT_FORMAT;
     }
     Calendar calendar = Calendar.getInstance();
     calendar.setTime(new Date());
@@ -281,7 +287,7 @@ public class Utils {
             try {
             jsonObject = resultsArray.getJSONObject(i);
 
-              String date = Utils.formatDate(jsonObject.getString("Date"),"yyyy-MM-dd", "MMM dd");
+              String date = Utils.formatDate(jsonObject.getString("Date"),DATE_DEFAULT_FORMAT, CHART_LABEL_DATE_FORMAT);
 
               xVals.add(date);
               Float value = Float.valueOf(jsonObject.getString("Close"));
@@ -328,7 +334,7 @@ public class Utils {
       do {
 
         try {
-          xVals.add(Utils.formatDate(cursor.getString(cursor.getColumnIndex("created")), "H:mm"));
+          xVals.add(Utils.formatDate(cursor.getString(cursor.getColumnIndex("created")), HOUR_FORMAT));
           Float value = Float.valueOf(cursor.getString(cursor.getColumnIndex("bid_price")));
           yVals.add(new Entry(value, xIndex));
           xIndex++;

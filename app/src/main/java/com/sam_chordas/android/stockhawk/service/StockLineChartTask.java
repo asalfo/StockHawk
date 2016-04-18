@@ -39,6 +39,7 @@ import java.util.List;
 public class StockLineChartTask extends AsyncTask<TaskParams, Void, LineData> {
 
 
+    public static final String SORT_FIELD = "| sort(field=\"Date\", descending=\"false\")";
     private final OkHttpClient client = new OkHttpClient();
     private final String LOG_TAG = StockLineChartTask.class.getSimpleName();
     private final WeakReference<DetailActivity> mActivity;
@@ -125,8 +126,8 @@ public class StockLineChartTask extends AsyncTask<TaskParams, Void, LineData> {
             int xIndex = 0;
             do {
 
-                xVals.add(cursor.getString(cursor.getColumnIndex("created")));
-                Float value = Float.valueOf(cursor.getString(cursor.getColumnIndex("bid_price")));
+                xVals.add(cursor.getString(cursor.getColumnIndex(QuoteColumns.CREATED)));
+                Float value = Float.valueOf(cursor.getString(cursor.getColumnIndex(QuoteColumns.BIDPRICE)));
                 yVals.add(new Entry(value, xIndex));
                 xIndex++;
 
@@ -185,13 +186,12 @@ public class StockLineChartTask extends AsyncTask<TaskParams, Void, LineData> {
             String starDate = Utils.startDate(option);
 
             // Base URL for the Yahoo query
-            urlStringBuilder.append("https://query.yahooapis.com/v1/public/yql?q=");
-            urlStringBuilder.append(URLEncoder.encode("select * from yahoo.finance.historicaldata where symbol "
+            urlStringBuilder.append(Constants.YAHOOAPIS_QUERY);
+            urlStringBuilder.append(URLEncoder.encode(Constants.SELECT_HISTORICALDATA
                     + "in (" + "\"" + symbol + "\"" + " )", "UTF-8"));
             urlStringBuilder.append(URLEncoder.encode("and startDate = \"" + starDate + "\" and endDate = \"" + Utils.openDay() + "\"", "UTF-8"));
-            urlStringBuilder.append(URLEncoder.encode("| sort(field=\"Date\", descending=\"false\")", "UTF-8"));
-            urlStringBuilder.append("&format=json&diagnostics=true&env=store%3A%2F%2Fdatatables."
-                    + "org%2Falltableswithkeys&callback=");
+            urlStringBuilder.append(URLEncoder.encode(SORT_FIELD, "UTF-8"));
+            urlStringBuilder.append(Constants.YQL_FORMAT);
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }

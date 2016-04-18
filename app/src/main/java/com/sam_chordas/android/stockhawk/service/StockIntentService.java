@@ -20,16 +20,16 @@ public class StockIntentService extends IntentService {
   }
 
   @Override protected void onHandleIntent(Intent intent) {
-    //if(Utils.isOpenDay()) {
+
       Log.d(StockIntentService.class.getSimpleName(), "Stock Intent Service");
       StockTaskService stockTaskService = new StockTaskService(this);
       Bundle args = new Bundle();
-      if (intent.getStringExtra("tag").equals("add")) {
-        args.putString("symbol", intent.getStringExtra("symbol"));
+      if (intent.getStringExtra(Constants.TAG).equals(Constants.ADD)) {
+        args.putString(Constants.SYMBOL, intent.getStringExtra(Constants.SYMBOL));
       }
       // We can call OnRunTask from the intent service to force it to run immediately instead of
       // scheduling a task.
-      stockTaskService.onRunTask(new TaskParams(intent.getStringExtra("tag"), args));
-    //}
+      stockTaskService.onRunTask(new TaskParams(intent.getStringExtra(Constants.TAG), args));
+
   }
 }
